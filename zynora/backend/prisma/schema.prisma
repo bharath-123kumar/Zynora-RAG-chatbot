@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("USER") // USER or ADMIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  auditLogs AuditLog[]
+  conversations Conversation[]
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  title     String    @default("New Conversation")
+  userId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages     Message[]
+  evaluations  ResponseEvaluation[]
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  role           String       // user or assistant
+  content        String
+  sources        String       @default("[]") // JSON string of sources
+  grounded       Boolean      @default(false)
+  confidence     String       @default("NONE") // HIGH, MEDIUM, LOW, NONE
+  latencyMs      Int          @default(0)
+  createdAt      DateTime     @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model ResponseEvaluation {
+  id                   String        @id @default(uuid())
+  conversationId       String?
+  userId               String?
+  question             String
+  retrievedChunksCount Int           @default(0)
+  topScore             Float         @default(0.0)
+  answer               String
+  sourcesCount         Int           @default(0)
+  sourcesJson          String        @default("[]")
+  latencyMs            Int           @default(0)
+  grounded             Boolean       @default(false)
+  confidence           String        @default("NONE") // HIGH, MEDIUM, LOW, NONE
+  isContextual         Boolean       @default(false)
+  createdAt            DateTime      @default(now())
+
+  conversation         Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+}
+
+model ErrorLog {
+  id         String   @id @default(uuid())
+  traceId    String?
+  userId     String?
+  endpoint   String?
+  method     String?
+  statusCode Int?
+  message    String
+  stack      String?
+  createdAt  DateTime @default(now())
+}
+
+model KnowledgeDocument {
+  id        String   @id @default(uuid())
+  docId     String   @unique // e.g. KB-COMP-001
+  title     String
+  category  String   // Company, Services, Franchise, Policies, FAQ
+  content   String
+  source    String   // File path or reference
+  version   String   @default("1.0")
+  status    String   @default("DRAFT") // DRAFT, APPROVED, ACTIVE, ARCHIVED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chunks KnowledgeChunk[]
+}
+
+model KnowledgeChunk {
+  id          String   @id @default(uuid())
+  documentId  String
+  chunkIndex  Int
+  title       String
+  category    String
+  section     String
+  content     String
+  source      String
+  version     String
+  status      String   @default("DRAFT") // DRAFT, APPROVED, ACTIVE, ARCHIVED
+  tokenCount  Int      @default(0)
+  vectorData  String   @default("{}") // JSON serialized term frequency / embedding representation
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  document KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  userEmail String?
+  action    String
+  resource  String
+  metadata  String   // JSON payload string
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}

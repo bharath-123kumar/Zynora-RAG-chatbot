@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta
+      name="description"
+      content="Zynora Knowledge Intelligence Chatbot - Official Internal Zyngram Knowledge Base"
+    />
+    <title>Zynora — Zyngram Knowledge Intelligence</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CDN for rapid styling rendering -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              zyngram: {
+                50: '#f0f4ff',
+                100: '#e0e7ff',
+                500: '#6366f1',
+                600: '#4f46e5',
+                700: '#4338ca',
+                800: '#3730a3',
+                900: '#1e1b4b',
+                dark: '#0b0f19',
+                card: '#131b2e'
+              }
+            },
+            fontFamily: {
+              sans: ['Outfit', 'Plus Jakarta Sans', 'sans-serif']
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-[#0b0f19] text-slate-100 font-sans antialiased min-h-screen">
+    <noscript>You need to enable JavaScript to run Zynora Chatbot.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
