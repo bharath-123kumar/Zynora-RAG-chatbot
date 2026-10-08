@@ -3,7 +3,17 @@ const { PrismaClient } = require('@prisma/client');
 const logger = require('../utils/logger');
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'zynora_super_secret_jwt_key_2026_zyngram_rag';
+
+// In production, JWT_SECRET MUST come from the environment variable.
+// A hardcoded fallback is only allowed in development to ease local setup.
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('[FATAL] JWT_SECRET environment variable is not set. Refusing to start in production.');
+    process.exit(1);
+  }
+  console.warn('[WARN] JWT_SECRET not set — using insecure development fallback. Set JWT_SECRET in your environment.');
+  return 'zynora_dev_only_jwt_secret_do_not_use_in_production';
+})();
 
 async function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
