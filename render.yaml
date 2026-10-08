@@ -29,7 +29,7 @@ services:
     staticPublishPath: build
     envVars:
       - key: REACT_APP_API_URL
-        value: https://zynora-backend.onrender.com/api   # update to your backend URL
+        value: https://zynora-rag-chatbot-backend.onrender.com/api
     routes:
       - type: rewrite
         source: /*
