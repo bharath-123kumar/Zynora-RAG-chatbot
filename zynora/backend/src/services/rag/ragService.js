@@ -1,6 +1,7 @@
 const { detectPromptInjection } = require('../../utils/promptSanitizer');
 const { getCandidateChunks } = require('../retrieval/retrievalService');
 const { rankCandidateChunks } = require('../ranking/rankingService');
+const { generateAnswerWithLLM, getLLMConfiguration } = require('../llm/llmService');
 const { logAuditEvent } = require('../../utils/auditLogger');
 const logger = require('../../utils/logger');
 const { PrismaClient } = require('@prisma/client');
@@ -403,8 +404,12 @@ async function processRAGQuery(userMessage, userObj = null, conversationId = nul
     };
   }
 
-  // Step 4: Grounded Answer Generation
-  const groundedResponse = generateGroundedAnswer(userMessage, topChunks, contextResolution);
+  // Step 4: Grounded Answer Generation (LLM Generation with Local Extractive Fallback)
+  let groundedResponse = await generateAnswerWithLLM(userMessage, topChunks, contextResolution);
+  if (!groundedResponse) {
+    groundedResponse = generateGroundedAnswer(userMessage, topChunks, contextResolution);
+  }
+
   const latencyMs = Date.now() - startTime;
   const topScore = topChunks[0]?.score || 0;
   const confidence = calculateConfidence(groundedResponse.grounded, topScore);
@@ -420,7 +425,8 @@ async function processRAGQuery(userMessage, userObj = null, conversationId = nul
       topChunkScore: topScore,
       sourcesCount: groundedResponse.sources.length,
       latencyMs,
-      isContextual: contextResolution.isContextual
+      isContextual: contextResolution.isContextual,
+      generationMode: groundedResponse.generationMode || 'extractive-local'
     }
   });
 
@@ -450,7 +456,8 @@ async function processRAGQuery(userMessage, userObj = null, conversationId = nul
     ...groundedResponse,
     confidence,
     latencyMs,
-    isContextual: contextResolution.isContextual
+    isContextual: contextResolution.isContextual,
+    generationMode: groundedResponse.generationMode || 'extractive-local'
   };
 }
 
@@ -458,5 +465,6 @@ module.exports = {
   processRAGQuery,
   generateGroundedAnswer,
   resolveContextualQuery,
+  getLLMConfiguration,
   UNKNOWN_FALLBACK_ANSWER
 };

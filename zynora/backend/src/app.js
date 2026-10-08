@@ -8,6 +8,7 @@ dotenv.config();
 
 const authRoutes = require('./routes/authRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const ragRoutes = require('./routes/ragRoutes');
 const knowledgeRoutes = require('./routes/knowledgeRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const { errorHandler } = require('./middleware/errorMiddleware');
@@ -52,6 +53,8 @@ app.use('/api/', apiLimiter);
 // Route Registrations
 app.use('/api/auth', authRoutes);
 app.use('/api/zynora', chatRoutes);
+app.use('/api/rag', ragRoutes);
+app.use('/api/chat', ragRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/admin', adminRoutes);
 
@@ -75,6 +78,38 @@ app.get('/health', async (req, res) => {
     activeKnowledgeChunks: activeChunks,
     timestamp: new Date().toISOString(),
     traceId: req.traceId
+  });
+});
+
+// Root API Info Route
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Zynora 2.0 RAG Chatbot API',
+    version: '2.0.0',
+    status: 'running',
+    description: 'Internal Zyngram RAG Chatbot Backend',
+    endpoints: {
+      health:       'GET  /health',
+      auth:         'POST /api/auth/login | /api/auth/register | /api/auth/logout',
+      chat:         'GET  /api/zynora/conversations | POST /api/zynora/conversations | POST /api/zynora/chat',
+      rag:          'POST /api/rag/query | POST /api/rag/chat | GET /api/rag/status',
+      knowledge:    'GET  /api/knowledge | POST /api/knowledge/upload',
+      admin:        'GET  /api/admin/stats | /api/admin/monitoring | ...',
+    },
+    frontend: 'http://localhost:3000',
+    docs: 'Open http://localhost:3000 in your browser to use Zynora.',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 404 handler for undefined routes
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Route not found',
+    path: req.originalUrl,
+    method: req.method,
+    hint: 'See GET / for available endpoints.',
+    timestamp: new Date().toISOString()
   });
 });
 

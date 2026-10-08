@@ -32,7 +32,7 @@ const loginSchema = z.object({
 
 const chatSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty'),
-  conversationId: z.string().optional()
+  conversationId: z.string().nullable().optional()
 });
 
 const createConversationSchema = z.object({
@@ -52,11 +52,22 @@ const documentSchema = z.object({
   status: z.enum(['DRAFT', 'APPROVED', 'ACTIVE', 'ARCHIVED']).optional().default('DRAFT')
 });
 
+const ragQuerySchema = z.object({
+  query: z.string().min(1, 'Query cannot be empty').optional(),
+  message: z.string().min(1, 'Message cannot be empty').optional(),
+  conversationId: z.string().nullable().optional(),
+  history: z.array(z.any()).optional()
+}).refine(data => data.query || data.message, {
+  message: 'Either query or message must be provided in request body',
+  path: ['query']
+});
+
 module.exports = {
   validateBody,
   registerSchema,
   loginSchema,
   chatSchema,
+  ragQuerySchema,
   createConversationSchema,
   renameConversationSchema,
   documentSchema

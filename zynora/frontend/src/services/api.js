@@ -21,6 +21,17 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Response interceptor to clear stale token on 401 Unauthorized
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('zynora_token');
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
@@ -29,7 +40,24 @@ export const authAPI = {
 };
 
 export const chatAPI = {
-  sendQuery: (message, conversationId = null) => api.post('/zynora/chat', { message, conversationId })
+  sendQuery: (message, conversationId = null) => api.post('/zynora/chat', {
+    message,
+    conversationId: conversationId || undefined
+  })
+};
+
+export const ragAPI = {
+  query: (query, conversationId = null, history = []) => api.post('/rag/query', {
+    query,
+    conversationId: conversationId || undefined,
+    history
+  }),
+  chat: (message, conversationId = null) => api.post('/rag/chat', {
+    message,
+    conversationId: conversationId || undefined
+  }),
+  getStatus: () => api.get('/rag/status'),
+  getHealth: () => api.get('/rag/health')
 };
 
 export const conversationAPI = {
