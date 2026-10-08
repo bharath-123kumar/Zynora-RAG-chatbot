@@ -8,6 +8,7 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 const UNKNOWN_FALLBACK_ANSWER = "I couldn't find this information in the approved Zyngram knowledge base.";
+const SCOPE_FALLBACK_ANSWER = "I can only answer questions related to Zyngram using the approved Zyngram knowledge base.";
 
 const PHYSICAL_HIERARCHY = ['Point', 'Center', 'Hub', 'Command', 'HQ'];
 const DIGITAL_HIERARCHY = ['Node', 'Zone', 'Territory', 'Region', 'Nation'];
@@ -316,6 +317,21 @@ async function processRAGQuery(userMessage, userObj = null, conversationId = nul
     };
   }
 
+  // Scope Check: Conversational meta queries about the bot's function/action
+  const normalizedMetaQuery = userMessage.trim().toLowerCase();
+  const isMetaScopeQuery = /^(what\s+are\s+you\s+doing\??|who\s+are\s+you\??|what\s+can\s+you\s+do\??|what\s+do\s+you\s+do\??|what\s+is\s+your\s+job\??)$/i.test(normalizedMetaQuery);
+  if (isMetaScopeQuery) {
+    const latencyMs = Date.now() - startTime;
+    return {
+      answer: SCOPE_FALLBACK_ANSWER,
+      sources: [],
+      grounded: false,
+      confidence: 'NONE',
+      latencyMs,
+      isContextual: false
+    };
+  }
+
   // Step 1: Context-Aware Query Resolution
   const contextResolution = resolveContextualQuery(userMessage, history);
   const effectiveQuery = contextResolution.searchQuery;
@@ -466,5 +482,6 @@ module.exports = {
   generateGroundedAnswer,
   resolveContextualQuery,
   getLLMConfiguration,
-  UNKNOWN_FALLBACK_ANSWER
+  UNKNOWN_FALLBACK_ANSWER,
+  SCOPE_FALLBACK_ANSWER
 };

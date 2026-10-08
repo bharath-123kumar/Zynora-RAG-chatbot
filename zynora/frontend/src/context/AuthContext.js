@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
 import { authAPI } from '../services/api';
 
 const AuthContext = createContext();
@@ -7,22 +7,28 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('zynora_token') || null);
   const [loading, setLoading] = useState(true);
+  // Prevent re-entrant / recursive logout calls
+  const isLoggingOut = useRef(false);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
-      if (token) {
+      if (token && !isLoggingOut.current) {
         try {
           const response = await authAPI.getMe();
           setUser(response.data.user);
         } catch (err) {
-          console.error('Session expired or invalid:', err);
-          logout();
+          // Token is invalid/expired — clear it silently without calling /logout
+          // (calling authAPI.logout here would race with the cleared token)
+          localStorage.removeItem('zynora_token');
+          setToken(null);
+          setUser(null);
         }
       }
       setLoading(false);
     };
 
     fetchCurrentUser();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const login = async (email, password) => {
@@ -44,6 +50,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    if (isLoggingOut.current) return;
+    isLoggingOut.current = true;
     try {
       if (token) await authAPI.logout();
     } catch (e) {
@@ -52,6 +60,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('zynora_token');
       setToken(null);
       setUser(null);
+      isLoggingOut.current = false;
     }
   };
 
